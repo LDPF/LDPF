@@ -45,7 +45,7 @@ ROOT_INC_DIR   := $(LDPF_ROOT_INC_DIR)
 LDGL_BUILD_DIR := $(ROOT_BUILD_DIR)/ldgl
 LUA_BUILD_DIR  := $(ROOT_BUILD_DIR)/lua
 LUA_DIR        := lua
-LUA_VERSION    := 5.4.2
+LUA_VERSION    := 5.4.3
 
 # ---------------------------------------------------------------------------------------------------------------------
 
