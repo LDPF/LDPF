@@ -25,7 +25,7 @@ extern "C" {
 START_NAMESPACE_LDGL
 // -----------------------------------------------------------------------
 
-typedef LDGL_LuaData       LuaData;
+typedef LDGL_Data          LuaData;
 typedef LDGL_LuaCModule    LuaCModule;
 typedef LDGL_LuaLSubModule LuaLSubModule;
 typedef LDGL_LuaLModule    LuaLModule;

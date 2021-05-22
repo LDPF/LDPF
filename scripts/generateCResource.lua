@@ -8,24 +8,18 @@ local function printf(...)
     io.stderr:write(string.format(...))
 end
 
-local moduleName, fileName, cname = ...
-
-local luaext = ".lua"
-
+local dataPtrName, inputFileName = ...
 
 local bytes
-
-if fileName:sub(-#luaext) == luaext then
-    bytes = string.dump(loadfile(fileName))
-elseif #moduleName == 0 then -- resourcecs only in main module
-    local f = io.open(fileName, "rb")
+do
+    local f = io.open(inputFileName, "rb")
     bytes = f:read("a")
     f:close()
 end
 
-if bytes then
+do
     writef('#include "../../ldpf/ldgl/ldgl_base.h"\n\n')
-    writef('static const unsigned char LDPF_%s_bytes[] = {\n    ', cname)
+    writef('static const unsigned char %s_bytes[] = {\n    ', dataPtrName)
     for j = 1, #bytes do
         if j > 1 and (j - 1) % 20 == 0 then
             writef('\n    ')
@@ -37,8 +31,8 @@ if bytes then
         end
     end
     writef('\n};\n\n')
-    writef('const LDGL_Data LDPF_%s_data = {\n', cname)
-    writef('    %d, LDPF_%s_bytes\n', #bytes, cname)
+    writef('const LDGL_Data %s = {\n', dataPtrName)
+    writef('    %d, %s_bytes\n', #bytes, dataPtrName)
     writef('};\n')
 end
 io.write(table.concat(output))

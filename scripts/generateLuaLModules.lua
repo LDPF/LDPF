@@ -49,7 +49,7 @@ writef('#include "../../ldpf/ldgl/ldgl_base.h"\n\n')
 writef('// {\n')
 for i = 1, #files do
     local file = files[i]
-    writef('extern const LDGL_LuaData LDPF_%s_data;\n', file.cname)
+    writef('extern const LDGL_Data LDPF_%s_data;\n', file.cname)
 end
 writef('// }\n\n')
 

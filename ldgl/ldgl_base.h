@@ -9,7 +9,7 @@ typedef int (*lua_CFunction) (lua_State *L);
 typedef struct {
     size_t               size;
     const unsigned char* bytes;
-} LDGL_LuaData;
+} LDGL_Data;
 
 typedef struct {
     const char*         moduleName;
@@ -17,8 +17,8 @@ typedef struct {
 } LDGL_LuaCModule;
 
 typedef struct {
-    const char*          moduleName;
-    const LDGL_LuaData*  data;
+    const char*       moduleName;
+    const LDGL_Data*  data;
 } LDGL_LuaLSubModule;
 
 typedef struct {
