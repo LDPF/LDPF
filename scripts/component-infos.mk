@@ -10,28 +10,42 @@ define LDPF_READ_COMPONENT_INFO
   LDPF_TMP_SUBMODULES       := $$(SUBMODULES)
   LDPF_TMP_DEPENDS          := $$(DEPENDS)
   LDPF_TMP_SYSTEM_FEATURES  := $$(SYSTEM_FEATURES)
+  LDPF_TMP_LMOD_NAME        := $$(LMOD_NAME)
   
   COMPONENT       :=
   TYPE            := 
   SUBMODULES      :=
   DEPENDS         := 
   SYSTEM_FEATURES :=
+  LMOD_NAME       :=
 
   include $1/info.mk
 
   ifneq ($$(filter $$(COMPONENT),$$(LDPF_ALL_ASSIGNED_NAMES)),)
     $$(error error in $1/info.mk: component name already assigned: $$(COMPONENT))
   endif
+  ifneq ($$(filter $$(SUBMODULES),$$(LDPF_ALL_ASSIGNED_NAMES)),)
+    $$(error error in $1/info.mk: component submodule(s) $$(filter $$(SUBMODULES),$$(LDPF_ALL_ASSIGNED_NAMES)) already assigned: $$(COMPONENT))
+  endif
   LDPF_ALL_ASSIGNED_NAMES              += $$(COMPONENT)
+  LDPF_ALL_ASSIGNED_NAMES              += $$(SUBMODULES)
   LDPF_ALL_COMPONENT_NAMES             += $$(COMPONENT)
   LDPF_ALL_COMPONENT_NAMES2            += $$(COMPONENT) $$(DEPENDS)
   LDPF_ALL_SYSTEM_FEATURES             += $$(SYSTEM_FEATURES)
+  
+  ifeq ($$(LMOD_NAME),)
+    LMOD_NAME := $$(COMPONENT)
+  endif
 
   LDPF_COMPONENT_$$(COMPONENT)_DIR             := $1
   LDPF_COMPONENT_$$(COMPONENT)_TYPE            := $$(TYPE)
   LDPF_COMPONENT_$$(COMPONENT)_DEPENDS         := $$(DEPENDS)
   LDPF_COMPONENT_$$(COMPONENT)_SYSTEM_FEATURES := $$(SYSTEM_FEATURES)
+  LDPF_COMPONENT_$$(COMPONENT)_LMOD_NAME       := $$(LMOD_NAME)
   
+  $$(foreach s,$$(SUBMODULES), \
+    $$(eval LDPF_COMPONENT_$$(s)_LMOD_NAME := $$(s)) \
+  )
   ifeq ($$(TYPE),native-lua-module)
     LDPF_ALL_LUA_CMODULES += $$(COMPONENT) $$(SUBMODULES)
     LDPF_ALL_STATIC_LIBS  += $$(COMPONENT)
@@ -54,6 +68,7 @@ define LDPF_READ_COMPONENT_INFO
   SUBMODULES      := $$(LDPF_TMP_SUBMODULES)
   DEPENDS         := $$(LDPF_TMP_DEPENDS)
   SYSTEM_FEATURES := $$(LDPF_TMP_SYSTEM_FEATURES)
+  LMOD_NAME       := $$(LDPF_TMP_LMOD_NAME)
 endef
 
 # Param $1: list of component directoris

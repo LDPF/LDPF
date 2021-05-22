@@ -127,7 +127,7 @@ $(BUILD_DIR)/GeneratedLuaInitParams.hpp: $(LDPF_PLUGIN_DIR)/info.mk
 	         echo '} // extern "C"' >> $@; \
 	         echo '' >> $@; \
 	         echo 'static const LDGL::LuaCModule LDPF_generatedLuaCModules[] = {' >> $@; \
-	         $(foreach m,$(LDPF_PLUGIN_LUA_CMODULES), echo '    { "$(m)", luaopen_$(subst .,_,$(m)) },' >> $@; ) \
+	         $(foreach m,$(LDPF_PLUGIN_LUA_CMODULES), echo '    { "$(LDPF_COMPONENT_$(m)_LMOD_NAME)", luaopen_$(subst .,_,$(m)) },' >> $@; ) \
 	         echo '    { NULL, NULL }' >> $@; \
 	         echo '};' >> $@; \
 	         echo '' >> $@; \
