@@ -2,6 +2,7 @@
 # Makefile for LDPF #
 # ----------------- #
 
+ifneq ($(LDPF_MAKEFILE_BASE_INCLUDED),true)
 LDPF_MAKEFILE_BASE_INCLUDED := true
 
 # disable builtin rules
@@ -51,3 +52,7 @@ else
   $(error unsupported platform)
 endif
 
+-include $(LDPF_ROOT_PATH)/sandbox-config.mk
+include  $(LDPF_ROOT_PATH)/config.mk
+
+endif # LDPF_MAKEFILE_BASE_INCLUDED

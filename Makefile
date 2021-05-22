@@ -147,6 +147,7 @@ $(LUA_BUILD_DIR)/lua: $(LUA_DIR)/src/lua.c $(ROOT_BUILD_DIR)/liblua.a $(INCS_lua
 
 clean-lua:
 	rm -rf $(LUA_BUILD_DIR) \
+	       $(INCS_lua) \
 	       $(ROOT_BUILD_DIR)/liblua.a
 clean-ldgl:
 	rm -rf $(LDGL_BUILD_DIR) \

@@ -12,12 +12,10 @@ LDPF_ROOT_BUILD_DIR := $(LDPF_ROOT_PATH)/build
 
 # --------------------------------------------------------------
 
-include $(DPF_PATH)/Makefile.base.mk
+include $(LDPF_PATH)/Makefile.base.mk
 
 # --------------------------------------------------------------
 
--include $(LDPF_ROOT_PATH)/sandbox-config.mk
-include  $(LDPF_ROOT_PATH)/config.mk
 include  $(LDPF_PATH)/scripts/assigned-names.mk
 include  $(LDPF_PATH)/scripts/component-infos.mk
 $(call LDPF_EVALUATE_COMPONENT_INFOS,$(LDPF_COMPONENTS))
@@ -179,7 +177,7 @@ clean: clean-ldpf \
        clean-components \
        clean-plugins
 	$(MAKE) clean -C $(DPF_PATH)/utils/lv2-ttl-generator
-	rm -rf bin $(LDPF_ROOT_BUILD_DIR)
+	rm -rf bin/* $(LDPF_ROOT_BUILD_DIR)/*
 
 # --------------------------------------------------------------
 

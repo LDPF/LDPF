@@ -50,12 +50,9 @@ OTHERUI_SYSTEM_LIBS :=
 
 # ---------------------------------------------------------------------------------------------------------------------------------
 
--include $(LDPF_ROOT_PATH)/sandbox-config.mk
-include  $(LDPF_ROOT_PATH)/config.mk
 include  $(LDPF_PATH)/scripts/assigned-names.mk
 include  $(LDPF_PATH)/scripts/component-infos.mk
 $(call LDPF_EVALUATE_COMPONENT_INFOS,$(LDPF_COMPONENTS))
-
 
 include $(LDPF_PATH)/scripts/plugin-component-infos.mk
 $(call LDPF_EVALUATE_PLUGIN_COMPONENT_INFOS,$(DEPENDS))
@@ -145,7 +142,6 @@ $(BUILD_DIR)/GeneratedLuaInitParams.hpp: $(LDPF_PLUGIN_DIR)/info.mk
 	         echo '};' >> $@; \
 
 $(BUILD_DIR)/%.c.o: $(BUILD_DIR)/%.c
-	-@mkdir -p "$(shell dirname $(BUILD_DIR)/$<)"
 	@echo "Compiling $<"
 	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -c -o $@
 
