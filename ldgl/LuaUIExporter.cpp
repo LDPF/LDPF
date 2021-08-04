@@ -366,13 +366,13 @@ public:
         }
     }
 
-    intptr_t getWindowId() {
+    uintptr_t getNativeWindowHandle() {
         if (!L) return 0;
-        int numberResults = call("getWindowId");
+        int numberResults = call("getNativeWindowHandle");
         if (numberResults > 0) {
             void* rslt = lua_touserdata(L, -1);
             lua_pop(L, numberResults);
-            return (intptr_t) rslt;
+            return (uintptr_t) rslt;
         } else {
             return 0;
         }
@@ -444,7 +444,8 @@ private:
 
 LuaUIExporter::LuaUIExporter(uint32_t parameterOffset,
                              void* const callbacksPtr,
-                             const intptr_t winId,
+                             const uintptr_t winId,
+                             const double sampleRate,
                              const editParamFunc editParamCall,
                              const setParamFunc setParamCall,
                              const setStateFunc setStateCall,
@@ -453,7 +454,7 @@ LuaUIExporter::LuaUIExporter(uint32_t parameterOffset,
                              const fileRequestFunc fileRequestCall,
                              const char* const bundlePath,
                              void* const dspPtr,
-                             const float scaleFactor,
+                             const double scaleFactor,
                              const uint32_t bgColor,
                              const uint32_t fgColor)
     : parameterOffset(parameterOffset),
@@ -525,9 +526,9 @@ uint LuaUIExporter::getHeight() const noexcept
 {
     return internal->getHeight();
 }
-intptr_t LuaUIExporter::getWindowId() const noexcept 
+uintptr_t LuaUIExporter::getNativeWindowHandle() const noexcept 
 {
-    return internal->getWindowId();
+    return internal->getNativeWindowHandle();
 }
 
 void LuaUIExporter::setSampleRate(const double sampleRate, const bool doCallback)
@@ -558,11 +559,6 @@ void LuaUIExporter::programLoaded(const uint32_t index)
 }
 
 
-bool LuaUIExporter::idle()
-{
-    return internal->idle();
-}
-
 void LuaUIExporter::exec(IdleCallback* const cb)
 {
     internal->exec(cb);
@@ -571,7 +567,13 @@ void LuaUIExporter::exec(IdleCallback* const cb)
 
 void LuaUIExporter::exec_idle()
 {
-    //printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
+    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
+}
+
+bool LuaUIExporter::plugin_idle()
+{
+//    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
+    return internal->idle();
 }
 
 
@@ -582,13 +584,13 @@ void LuaUIExporter::quit()
 }
 
 
-bool LuaUIExporter::handlePluginKeyboard(const bool press, const uint key)
+bool LuaUIExporter::handlePluginKeyboard(const bool press, const uint key, const uint16_t mods)
 {
     printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
     return false;
 }
 
-bool LuaUIExporter::handlePluginSpecial(const bool press, const DGL_NAMESPACE::Key key)
+bool LuaUIExporter::handlePluginSpecial(const bool press, const DGL_NAMESPACE::Key key, const uint16_t mods)
 {
     printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
     return false;
