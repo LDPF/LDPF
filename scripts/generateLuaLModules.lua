@@ -24,7 +24,7 @@ for i = firstArg, nargs do
     local fileName = select(i, ...)
     if fileName:sub(1, #baseDir) == baseDir then
         local file = { fileName = fileName,
-                       cname    = "generated_"..((modulePrefix..fileName):sub(#baseDir + 1):gsub("[/.]", "_")) }
+                       cname    = "generated_"..((modulePrefix..(fileName:sub(#baseDir + 1))):gsub("[/.]", "_")) }
         files[i - firstArg + 1] = file
         if fileName:sub(-#luaext) == luaext then
             file.isLua = true

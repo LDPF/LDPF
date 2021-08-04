@@ -26,6 +26,13 @@ ifndef PKG_CONFIG
   endif
 endif
 
+# --------------------------------------------------------------
+
+-include $(LDPF_ROOT_PATH)/sandbox-config.mk
+include  $(LDPF_ROOT_PATH)/config.mk
+
+# --------------------------------------------------------------
+
 ifneq ($(DPF_MAKEFILE_BASE_INCLUDED),true)
   include $(DPF_PATH)/Makefile.base.mk
 endif
@@ -51,8 +58,5 @@ ifneq ($(LUA_CFLAGS),)
 else
   $(error unsupported platform)
 endif
-
--include $(LDPF_ROOT_PATH)/sandbox-config.mk
-include  $(LDPF_ROOT_PATH)/config.mk
 
 endif # LDPF_MAKEFILE_BASE_INCLUDED

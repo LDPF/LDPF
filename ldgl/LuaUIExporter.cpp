@@ -520,14 +520,17 @@ bool LuaUIExporter::isVisible() const noexcept {
 }
 uint LuaUIExporter::getWidth() const noexcept 
 {
+    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
     return internal->getWidth();
 }
 uint LuaUIExporter::getHeight() const noexcept 
 {
+    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
     return internal->getHeight();
 }
 uintptr_t LuaUIExporter::getNativeWindowHandle() const noexcept 
 {
+    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
     return internal->getNativeWindowHandle();
 }
 
@@ -561,13 +564,14 @@ void LuaUIExporter::programLoaded(const uint32_t index)
 
 void LuaUIExporter::exec(IdleCallback* const cb)
 {
+    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
     internal->exec(cb);
 }
 
 
 void LuaUIExporter::exec_idle()
 {
-    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
+//    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
 }
 
 bool LuaUIExporter::plugin_idle()
@@ -579,8 +583,8 @@ bool LuaUIExporter::plugin_idle()
 
 void LuaUIExporter::quit()
 {
-    internal->close();
     printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
+    internal->close();
 }
 
 
