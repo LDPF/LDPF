@@ -7,6 +7,9 @@ end
 local function printf(...)
     io.stderr:write(string.format(...))
 end
+local function errorf(formatString, ...)
+    error(string.format(formatString, ...), 2)
+end
 
 local moduleName, fileName, cname = ...
 
@@ -16,7 +19,11 @@ local luaext = ".lua"
 local bytes
 
 if fileName:sub(-#luaext) == luaext then
-    bytes = string.dump(loadfile(fileName))
+    local chunk, err = loadfile(fileName)
+    if not chunk then
+        errorf("Error loading file '%s': %s", fileName, err)
+    end
+    bytes = string.dump(chunk)
 elseif #moduleName == 0 then -- resourcecs only in main module
     local f = io.open(fileName, "rb")
     bytes = f:read("a")
