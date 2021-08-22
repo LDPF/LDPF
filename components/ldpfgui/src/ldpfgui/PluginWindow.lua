@@ -1,5 +1,4 @@
 local ldpf    = require("ldpf")
-local ldpfgui = require("ldpfgui")
 local lwtk    = require("lwtk")
 
 
@@ -35,12 +34,12 @@ function PluginWindow:new(gui, winParams)
     end
     
     function ldpf.getWidth()
-        local w,h = self:getSize()
+        local w,_ = self:getSize()
         return w
     end
     
     function ldpf.getHeight()
-        local w,h = self:getSize()
+        local _,h = self:getSize()
         return h
     end
 
@@ -51,7 +50,6 @@ function PluginWindow:new(gui, winParams)
     ----------------------------------------------------------------------------------------------------------
     -- Show Window
 
-    self:show()
     self:requestFocus()
 
     --print(string.format("Native window handle %p\n", self:getNativeHandle()))

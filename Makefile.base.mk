@@ -39,18 +39,18 @@ endif
 
 # --------------------------------------------------------------
 
-LUA_CFLAGS :=
+LUA_CFLAGS := -DLUA_COMPAT_5_3
 
 ifeq ($(LINUX),true)
-  LUA_CFLAGS := -DLUA_USE_LINUX
+  LUA_CFLAGS += -DLUA_USE_LINUX
 endif
 
 ifeq ($(WINDOWS),true)
-  LUA_CFLAGS := -DLUA_USE_WINDOWS
+  LUA_CFLAGS += -DLUA_USE_WINDOWS
 endif
 
 ifeq ($(MACOS),true)
-  LUA_CFLAGS := -DLUA_USE_MACOSX
+  LUA_CFLAGS += -DLUA_USE_MACOSX
 endif
 
 ifneq ($(LUA_CFLAGS),)

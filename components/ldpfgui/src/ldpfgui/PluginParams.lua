@@ -93,6 +93,9 @@ end
 
 function PluginParams:addListener(parName, obj, func)
     local par = self.pars[parName]
+    if not par then
+        error(string.format("unknown PluginParam: %s", tostring(parName)))
+    end
     par.listeners[obj] = func
     func(obj, par.value)
 end
