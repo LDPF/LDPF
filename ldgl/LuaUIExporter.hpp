@@ -55,7 +55,11 @@ public:
 
     uint getHeight() const noexcept;
 
+    double getScaleFactor() const noexcept;
+    
     uintptr_t getNativeWindowHandle() const noexcept;
+    
+    void notifyScaleFactorChanged(const double scaleFactor);
     
     void setSampleRate(const double sampleRate, const bool doCallback = false);
     void stateChanged(const char* const key, const char* const value);

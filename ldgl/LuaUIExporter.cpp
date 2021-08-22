@@ -441,6 +441,7 @@ private:
 };
 
 // -----------------------------------------------------------------------
+// see dpf/distrho/src/DistrhoUIInternal.hpp
 
 LuaUIExporter::LuaUIExporter(uint32_t parameterOffset,
                              void* const callbacksPtr,
@@ -528,10 +529,22 @@ uint LuaUIExporter::getHeight() const noexcept
     printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
     return internal->getHeight();
 }
+
+double LuaUIExporter::getScaleFactor() const noexcept
+{
+    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
+    return 1;
+}
+
 uintptr_t LuaUIExporter::getNativeWindowHandle() const noexcept 
 {
     printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
     return internal->getNativeWindowHandle();
+}
+
+void LuaUIExporter::notifyScaleFactorChanged(const double scaleFactor)
+{
+    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
 }
 
 void LuaUIExporter::setSampleRate(const double sampleRate, const bool doCallback)
