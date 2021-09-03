@@ -18,7 +18,7 @@ do
 end
 
 do
-    writef('#include "../../ldpf/ldgl/ldgl_base.h"\n\n')
+    writef('#include "../../ldpf/src/ldpf_base.h"\n\n')
     writef('static const unsigned char %s_bytes[] = {\n    ', dataPtrName)
     for j = 1, #bytes do
         if j > 1 and (j - 1) % 20 == 0 then
@@ -31,7 +31,7 @@ do
         end
     end
     writef('\n};\n\n')
-    writef('const LDGL_Data %s = {\n', dataPtrName)
+    writef('const LDPF_Data %s = {\n', dataPtrName)
     writef('    %d, %s_bytes\n', #bytes, dataPtrName)
     writef('};\n')
 end

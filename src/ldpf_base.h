@@ -1,5 +1,5 @@
-#ifndef LDGL_BASE_H_INCLUDED
-#define LDGL_BASE_H_INCLUDED
+#ifndef LDPF_BASE_H_INCLUDED
+#define LDPF_BASE_H_INCLUDED
 
 #include <stddef.h>
 
@@ -9,22 +9,22 @@ typedef int (*lua_CFunction) (lua_State *L);
 typedef struct {
     size_t               size;
     const unsigned char* bytes;
-} LDGL_Data;
+} LDPF_Data;
 
 typedef struct {
     const char*         moduleName;
     const lua_CFunction openFunc;
-} LDGL_LuaCModule;
+} LDPF_LuaCModule;
 
 typedef struct {
     const char*       moduleName;
-    const LDGL_Data*  data;
-} LDGL_LuaLSubModule;
+    const LDPF_Data*  data;
+} LDPF_LuaLSubModule;
 
 typedef struct {
     const char*               moduleName;
-    const LDGL_LuaLSubModule* subModules;
-} LDGL_LuaLModule;
+    const LDPF_LuaLSubModule* subModules;
+} LDPF_LuaLModule;
 
 
-#endif // LDGL_BASE_H_INCLUDED
+#endif // LDPF_BASE_H_INCLUDED

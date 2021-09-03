@@ -45,17 +45,17 @@ end
 
 table.sort(files, function(a,b) return a.pkgName < b.pkgName end)
 
-writef('#include "../../ldpf/ldgl/ldgl_base.h"\n\n')
+writef('#include "../../ldpf/src/ldpf_base.h"\n\n')
 writef('// {\n')
 for i = 1, #files do
     local file = files[i]
-    writef('extern const LDGL_Data LDPF_%s_data;\n', file.cname)
+    writef('extern const LDPF_Data LDPF_%s_data;\n', file.cname)
 end
 writef('// }\n\n')
 
 
 if #moduleName == 0 then -- resources only in main module
-    writef('const LDGL_LuaLSubModule LDPF_generatedMainModuleResources[] = {\n')
+    writef('const LDPF_LuaLSubModule LDPF_generatedMainModuleResources[] = {\n')
     for i = 1, #files do
         local file = files[i]
         if file.isNonLua then
@@ -73,7 +73,7 @@ do
     else
         arrayName = "LDPF_generatedMainModulePackages"
     end
-    writef('const LDGL_LuaLSubModule %s[] = {\n', arrayName)
+    writef('const LDPF_LuaLSubModule %s[] = {\n', arrayName)
     for i = 1, #files do
         local file = files[i]
         if file.isLua then

@@ -3,45 +3,34 @@
 
 #include <lua.hpp>
 
-#include "LuaUIExporter.hpp"
+#include "LuaUI.hpp"
 
 #ifdef LDPF_MACOS
-   #include "macos_util.h"
+   #include "ldpf_macos_util.h"
 #endif
 
 // -----------------------------------------------------------------------
-START_NAMESPACE_LDGL
+START_NAMESPACE_LDPF
 // -----------------------------------------------------------------------
 
 extern "C" {
 
-struct ldgl_luadata
+struct ldpf_luadata
 {
-    ldgl_luadata(intptr_t     parentWinId,
-                 uint32_t     parameterOffset,
-                 void*        callbacksPtr,
-                 setParamFunc setParamCall)
+    ldpf_luadata(LuaUI* luaUI)
         : active(true),
-          parentWinId(parentWinId),
-          parameterOffset(parameterOffset),
-          callbacksPtr(callbacksPtr),
-          setParamCall(setParamCall),
+          parentWinId(luaUI->getParentWindowHandle()),
+          luaUI(luaUI),
           ldpf_ref(0),
-          lmods_ref(0),
-          idleCallback(NULL),
-          idleCallback_ref(0)
+          lmods_ref(0)
     {}
     bool          active;
     intptr_t      parentWinId;
-    uint32_t      parameterOffset;
-    void*         callbacksPtr;
-    setParamFunc  setParamCall;
+    LuaUI*        luaUI;
     
     int           ldpf_ref;
     int           lmods_ref;
     int           lres_ref;
-    IdleCallback* idleCallback;
-    int           idleCallback_ref;
 };
 
 // -----------------------------------------------------------------------
@@ -49,7 +38,7 @@ struct ldgl_luadata
 /*
 ** Message handler used to run all chunks
 */
-static int ldgl_msghandler(lua_State* L) 
+static int ldpf_msghandler(lua_State* L) 
 {
   const char* msg = lua_tostring(L, 1);
   if (msg == NULL) {  /* is error object not a string? */
@@ -66,35 +55,53 @@ static int ldgl_msghandler(lua_State* L)
 
 // -----------------------------------------------------------------------
 
-static int ldgl_callSetParam(lua_State* L)
+static int ldpf_callSetParam(lua_State* L)
 {
-    ldgl_luadata* luadata = (ldgl_luadata*)lua_touserdata(L, lua_upvalueindex(1));
+    ldpf_luadata* luadata = (ldpf_luadata*)lua_touserdata(L, lua_upvalueindex(1));
     luaL_checkinteger(L, 1);
     luaL_checknumber(L, 2);
     try {
-         if (luadata->active) {
+         if (luadata && luadata->active) {
             uint32_t index = lua_tointeger(L, 1);
             float    value = lua_tonumber(L, 2);
-            luadata->setParamCall(luadata->callbacksPtr, index + luadata->parameterOffset, value);
+            luadata->luaUI->setParameterValue(index, value);
          }
         return 0;
     } catch (...) {
-        return luaL_error(L, "Unexpected C++ exception while calling setParameterValue");
+        return luaL_error(L, "Unexpected C++ exception while calling 'setParameterValue'");
     }
 }
 
 // -----------------------------------------------------------------------
 
-static int ldgl_callIdleCallback(lua_State* L)
+static int ldpf_callSetSize(lua_State* L)
 {
-    ldgl_luadata* luadata = (ldgl_luadata*)lua_touserdata(L, lua_upvalueindex(1));
+    ldpf_luadata* luadata = (ldpf_luadata*)lua_touserdata(L, lua_upvalueindex(1));
+    luaL_checknumber(L, 1);
+    luaL_checknumber(L, 2);
     try {
-         if (luadata->idleCallback) {
-            luadata->idleCallback->idleCallback();
+         if (luadata && luadata->active) {
+            int  width  = floor(lua_tonumber(L, 1)+0.5);
+            int  height = floor(lua_tonumber(L, 2)+0.5);
+            luadata->luaUI->setSize(width, height);
          }
         return 0;
     } catch (...) {
-        return luaL_error(L, "Unexpected C++ exception while calling idleCallback");
+        return luaL_error(L, "Unexpected C++ exception while calling 'setParameterValue'");
+    }
+}
+// -----------------------------------------------------------------------
+
+static int ldpf_callClose(lua_State* L)
+{
+    ldpf_luadata* luadata = (ldpf_luadata*)lua_touserdata(L, lua_upvalueindex(1));
+    try {
+        if (luadata && luadata->active) {
+            luadata->luaUI->close();
+        }
+        return 0;
+    } catch (...) {
+        return luaL_error(L, "Unexpected C++ exception while calling 'close'");
     }
 }
 
@@ -102,7 +109,7 @@ static int ldgl_callIdleCallback(lua_State* L)
 
 static int ldpf_package_searcher(lua_State* L)
 {
-    ldgl_luadata* luadata = (ldgl_luadata*)lua_touserdata(L, lua_upvalueindex(1));
+    ldpf_luadata* luadata = (ldpf_luadata*)lua_touserdata(L, lua_upvalueindex(1));
     lua_rawgeti(L, LUA_REGISTRYINDEX, luadata->lmods_ref);                    // -> lmods
     lua_pushvalue(L, 1);                                                      // -> lmods, modName 
     if (lua_rawget(L, -2) == LUA_TLIGHTUSERDATA) {                            // -> lmods, s
@@ -117,25 +124,28 @@ static int ldpf_package_searcher(lua_State* L)
 
 // -----------------------------------------------------------------------
 
-static int ldgl_callGetResource(lua_State* L)
+static int ldpf_callGetResource(lua_State* L)
 {
-    ldgl_luadata* luadata = (ldgl_luadata*)lua_touserdata(L, lua_upvalueindex(1));
-    luaL_checkstring(L, 1);
-
-    lua_rawgeti(L, LUA_REGISTRYINDEX, luadata->lres_ref);                     // -> lres
-    lua_pushvalue(L, 1);                                                      // -> lres, resName 
-    if (lua_rawget(L, -2) == LUA_TLIGHTUSERDATA) {                            // -> lres, res
-        const LuaLSubModule* r = (const LuaLSubModule*)lua_touserdata(L, -1); // -> lres, res
-        lua_pushlightuserdata(L, (void*)r->data->bytes);                      // -> lres, res, bytes
-        lua_pushinteger(L, r->data->size);                                    // -> lres, res, bytes, size
-        return 2;
+    ldpf_luadata* luadata = (ldpf_luadata*)lua_touserdata(L, lua_upvalueindex(1));
+    if (luadata && luadata->active) {
+        luaL_checkstring(L, 1);
+        lua_rawgeti(L, LUA_REGISTRYINDEX, luadata->lres_ref);                     // -> lres
+        lua_pushvalue(L, 1);                                                      // -> lres, resName 
+        if (lua_rawget(L, -2) == LUA_TLIGHTUSERDATA) {                            // -> lres, res
+            const LuaLSubModule* r = (const LuaLSubModule*)lua_touserdata(L, -1); // -> lres, res
+            lua_pushlightuserdata(L, (void*)r->data->bytes);                      // -> lres, res, bytes
+            lua_pushinteger(L, r->data->size);                                    // -> lres, res, bytes, size
+            return 2;
+        } else {
+            return 0;
+        }
     } else {
         return 0;
     }
 }
 // -----------------------------------------------------------------------
 
-static int ldpf_init(lua_State* L)
+static int ldpf_init_lmod(lua_State* L)
 {
     lua_newtable(L); // -> ldpf
     return 1;
@@ -143,10 +153,10 @@ static int ldpf_init(lua_State* L)
 
 // -----------------------------------------------------------------------
 
-static int ldgl_init(lua_State* L)
+static int ldpf_init(lua_State* L)
 {
-    ldgl_luadata*   luadata    = (ldgl_luadata*)lua_touserdata(L, 1);
-    LuaInitParams*  initParams = (LuaInitParams*)lua_touserdata(L, 2);
+    ldpf_luadata*             luadata    = (ldpf_luadata*)lua_touserdata(L, 1);
+    const LuaUI::InitParams*  initParams = (LuaUI::InitParams*)lua_touserdata(L, 2);
     
     const char* luaPath = initParams->luaPath;
     if (initParams->luaPathEnvVar) {
@@ -215,18 +225,26 @@ static int ldgl_init(lua_State* L)
     }
     lua_pop(L, 1);                                              // ->
     
-    luaL_requiref(L, "ldpf", ldpf_init, false);                 // -> ldpf
+    luaL_requiref(L, "ldpf", ldpf_init_lmod, false);            // -> ldpf
     if (luadata->parentWinId) {
         lua_pushlightuserdata(L, (void*) luadata->parentWinId); // -> ldpf, parentWinId
         lua_setfield(L, -2, "parentWindowId");                  // -> ldpf
     }                                                           // -> ldpf
     lua_pushlightuserdata(L, luadata);                          // -> ldpf, luadata
-    lua_pushcclosure(L, ldgl_callSetParam, 1);                  // -> ldpf, setParam
+    lua_pushcclosure(L, ldpf_callSetParam, 1);                  // -> ldpf, setParam
     lua_setfield(L, -2, "setParameterValue");                   // -> ldpf
                                                                 // -> ldpf
     lua_pushlightuserdata(L, luadata);                          // -> ldpf, luadata
-    lua_pushcclosure(L, ldgl_callGetResource, 1);               // -> ldpf, getResource
+    lua_pushcclosure(L, ldpf_callSetSize, 1);                   // -> ldpf, setSize
+    lua_setfield(L, -2, "setSize");                             // -> ldpf
+                                                                // -> ldpf
+    lua_pushlightuserdata(L, luadata);                          // -> ldpf, luadata
+    lua_pushcclosure(L, ldpf_callGetResource, 1);               // -> ldpf, getResource
     lua_setfield(L, -2, "getResource");                         // -> ldpf
+                                                                // -> ldpf
+    lua_pushlightuserdata(L, luadata);                          // -> ldpf, luadata
+    lua_pushcclosure(L, ldpf_callClose, 1);                     // -> ldpf, getResource
+    lua_setfield(L, -2, "close");                               // -> ldpf
                                                                 // -> ldpf
     luadata->ldpf_ref = luaL_ref(L, LUA_REGISTRYINDEX);         // -> 
     
@@ -241,26 +259,22 @@ static int ldgl_init(lua_State* L)
 } // extern "C"
 
 
-class LuaUIExporter::Internal
+class LuaUI::Internal
 {
 public:
-    Internal(intptr_t     parentWinId,
-             uint32_t     parameterOffset,
-             void*        callbacksPtr,
-             setParamFunc setParamCall)
+    Internal(const InitParams* initParams, LuaUI* luaUI)
              
-        : initParams(getLuaInitParams()),
-          luadata(parentWinId,
-                  parameterOffset,
-                  callbacksPtr,
-                  setParamCall),
-          screenScale(1),
+        : initParams(initParams),
+          luaUI(luaUI),
+          luadata(luaUI),
+          windowSizeScaleFactor(1),
           initialized(false),
-          isInExec(false),
           L(NULL)
     {
     #ifdef LDPF_MACOS
-        screenScale = LDGL_getScreenScaleFactor();
+        // We are always operating in unscaled pixels but for
+        // MacOS the windows sizes have to be normalized.
+        windowSizeScaleFactor = LDPF_getScreenScaleFactor();
     #endif
         assureInitialized();
     }
@@ -271,12 +285,12 @@ public:
             L = luaL_newstate();
             if (L) {
                 luaL_openlibs(L);
-                lua_pushcfunction(L, ldgl_msghandler);        // -> msgh
+                lua_pushcfunction(L, ldpf_msghandler);        // -> msgh
                 int msgh = lua_gettop(L);
-                lua_pushcfunction(L, &ldgl_init);             // -> msgh, initFunc
+                lua_pushcfunction(L, &ldpf_init);             // -> msgh, initFunc
                 int argc = 0;
                 lua_pushlightuserdata(L, &luadata); ++argc;  // -> msgh, initFunc, args..
-                lua_pushlightuserdata(L, initParams); ++argc;
+                lua_pushlightuserdata(L, (void*)initParams); ++argc;
                 int rc = lua_pcall(L, argc, 0, msgh);         // -> msgh, ?
                 if (rc != LUA_OK) {                           // -> msgh, err
                     fprintf(stderr, "Error while initializing Lua plugin gui: %s\n",
@@ -300,7 +314,7 @@ public:
     int call(const char* funcName, int nargs = 0) {                              // -> args...
         if (lua_rawgeti(L, LUA_REGISTRYINDEX, luadata.ldpf_ref) == LUA_TTABLE) { // -> args..., ldpf
             lua_insert(L, -(nargs+1));                                           // -> ldpf, args...
-            lua_pushcfunction(L, ldgl_msghandler);                               // -> ldpf, args..., msgh
+            lua_pushcfunction(L, ldpf_msghandler);                               // -> ldpf, args..., msgh
             lua_insert(L, -(nargs+1));                                           // -> ldpf, msgh, args...
             if (lua_getfield(L, -(nargs+2), funcName) == LUA_TFUNCTION) {        // -> ldpf, msgh, args..., func
                 lua_insert(L, -(nargs+1));                                       // -> ldpf, msgh, func, args...
@@ -325,46 +339,6 @@ public:
         }
     }
     
-    void exec(IdleCallback* const cb) {
-        if (!L || isInExec) return;
-        isInExec = true;
-        if (!luadata.idleCallback_ref) {
-            lua_pushlightuserdata(L, &luadata);                          // -> luadata
-            lua_pushcclosure(L, ldgl_callIdleCallback, 1);               // -> idleCallback
-            luadata.idleCallback_ref = luaL_ref(L, LUA_REGISTRYINDEX);   // -> 
-        }
-        lua_rawgeti(L, LUA_REGISTRYINDEX, luadata.idleCallback_ref);    // -> idleCallback
-        luadata.idleCallback = cb;                                      // -> idleCallback
-        int numberResults = call("exec", 1);                            // -> rslts...
-        lua_pop(L, numberResults);                                      // -> 
-        luadata.idleCallback = NULL;
-        isInExec = false;
-    }
-    
-
-    uint getWidth() {
-        if (!L) return 0;
-        int numberResults = call("getWidth");
-        if (numberResults > 0) {
-            uint rslt = lua_tointeger(L, -1);
-            lua_pop(L, numberResults);
-            return rslt/screenScale;
-        } else {
-            return 0;
-        }
-    }
-
-    uint getHeight() {
-        if (!L) return 0;
-        int numberResults = call("getHeight");
-        if (numberResults > 0) {
-            uint rslt = lua_tointeger(L, -1);
-            lua_pop(L, numberResults);
-            return rslt/screenScale;
-        } else {
-            return 0;
-        }
-    }
 
     uintptr_t getNativeWindowHandle() {
         if (!L) return 0;
@@ -386,36 +360,22 @@ public:
         lua_pop(L, numberResults);
     }
 
-    void close() {
-        if (!L) return;
-        int numberResults = call("close");
-        lua_pop(L, numberResults);
-    }
-    
     // false for termination
-    bool idle() {
-        if (!L) return false;
+    void idle() {
+        if (!L) return;
         if (lua_rawgeti(L, LUA_REGISTRYINDEX, luadata.ldpf_ref) == LUA_TTABLE) { // -> ldpf
-            lua_pushcfunction(L, ldgl_msghandler);                               // -> ldpf, msgh
+            lua_pushcfunction(L, ldpf_msghandler);                               // -> ldpf, msgh
             int msgh = lua_gettop(L);
             if (lua_getfield(L, -2, "idle") == LUA_TFUNCTION) {                  // -> ldpf, msgh, idle
                 int rc = lua_pcall(L, 0, 1, msgh);                               // -> ldpf, msgh, ?
                 if (rc != LUA_OK) {                                              // -> ldpf, msgh, err
                     fprintf(stderr, "Error while calling ldpf.idle(): %s\n",
                                      lua_tostring(L, -1));
-                    lua_pop(L, 3);
-                    return 0;                 
-                } // -> ldpf, msgh, rslt
-                bool continueFlag = lua_toboolean(L, -1);
-                lua_pop(L, 3);
-                return continueFlag;
-            } else {            // -> ldpf, msgh, ?
-                lua_pop(L, 3);  // -> 
-                return true;
-            }
+                }                                                                // -> ldpf, msgh, rslt
+            }                                                                    // -> ldpf, msgh, ?
+            lua_pop(L, 3);   // -> 
         } else {             // -> ?
             lua_pop(L, 1);   // ->
-            return false;
         }
     }
     
@@ -429,192 +389,103 @@ public:
     }
     
 private:
-    LuaInitParams* const initParams;
-    ldgl_luadata         luadata;
+    const InitParams* const initParams;
+    LuaUI* const            luaUI;
+    
+    ldpf_luadata         luadata;
 
-    double screenScale;
+    double windowSizeScaleFactor;
 
     bool initialized;
-    bool isInExec;
  
     lua_State* L;
 };
 
 // -----------------------------------------------------------------------
-// see dpf/distrho/src/DistrhoUIInternal.hpp
 
-LuaUIExporter::LuaUIExporter(uint32_t parameterOffset,
-                             void* const callbacksPtr,
-                             const uintptr_t winId,
-                             const double sampleRate,
-                             const editParamFunc editParamCall,
-                             const setParamFunc setParamCall,
-                             const setStateFunc setStateCall,
-                             const sendNoteFunc sendNoteCall,
-                             const setSizeFunc setSizeCall,
-                             const fileRequestFunc fileRequestCall,
-                             const char* const bundlePath,
-                             void* const dspPtr,
-                             const double scaleFactor,
-                             const uint32_t bgColor,
-                             const uint32_t fgColor)
-    : parameterOffset(parameterOffset),
-      internal(new Internal(winId,
-                            parameterOffset,
-                            callbacksPtr,
-                            setParamCall))
+LuaUI::LuaUI(const LuaUI::InitParams* initParams)
+    : UI(1, 1),
+      internal(new Internal(initParams, this))
 {
-    (void)editParamCall;
-    (void)setStateCall;
-    (void)sendNoteCall;
-    (void)setSizeCall;
-    (void)scaleFactor;
-    (void)dspPtr;
-    (void)bundlePath;
-    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
+    printf("----------------- LuaUI line %d ----------------\n", __LINE__);
+//    setSize(100,50);
 }
 
 // -----------------------------------------------------------------------
 
-LuaUIExporter::~LuaUIExporter()
+LuaUI::~LuaUI()
 {
-    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
+    printf("----------------- LuaUI line %d ----------------\n", __LINE__);
     delete internal;
-    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
+    printf("----------------- LuaUI line %d ----------------\n", __LINE__);
 }
 
-// -----------------------------------------------------------------------
-
-void LuaUIExporter::setWindowTransientWinId(const uintptr_t winId)
+uintptr_t LuaUI::getNativeWindowHandle() const noexcept
 {
-    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
-}
-
-void LuaUIExporter::setWindowTitle(const char* const uiTitle)
-{
-    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
-}
-
-void LuaUIExporter::setWindowSize(const uint width, const uint height, const bool updateUI)
-{
-    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
-    (void)width;
-    (void)height;
-    (void)updateUI;
-}
-
-bool LuaUIExporter::setWindowVisible(const bool yesNo)
-{
-    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
-    (void)yesNo;
-    return true;
-}
-
-void LuaUIExporter::focus()
-{
-    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
-}
-
-bool LuaUIExporter::isVisible() const noexcept {
-    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
-    return true;
-}
-uint LuaUIExporter::getWidth() const noexcept 
-{
-    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
-    return internal->getWidth();
-}
-uint LuaUIExporter::getHeight() const noexcept 
-{
-    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
-    return internal->getHeight();
-}
-
-double LuaUIExporter::getScaleFactor() const noexcept
-{
-    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
-    return 1;
-}
-
-uintptr_t LuaUIExporter::getNativeWindowHandle() const noexcept 
-{
-    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
+    printf("----------------- LuaUI line %d ----------------\n", __LINE__);
     return internal->getNativeWindowHandle();
 }
 
-void LuaUIExporter::notifyScaleFactorChanged(const double scaleFactor)
+void LuaUI::sizeChanged(uint width, uint height)
 {
-    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
+    printf("----------------- LuaUI line %d ----------------\n", __LINE__);
 }
 
-void LuaUIExporter::setSampleRate(const double sampleRate, const bool doCallback)
+void LuaUI::focus()
 {
-    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
-    (void)sampleRate;
-    (void)doCallback;
+    printf("----------------- LuaUI line %d ----------------\n", __LINE__);
 }
 
-void LuaUIExporter::stateChanged(const char* const key, const char* const value)
-{
-    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
-    (void)key;
-    (void)value;
-}
 
-void LuaUIExporter::parameterChanged(const uint32_t index, const float value)
+
+void LuaUI::parameterChanged(uint32_t index, float value)
 {
-    printf("----------------- LuaUIExporter line %d ---------------- parameter changed %d : %f\n", __LINE__, index, value);
+    printf("----------------- LuaUI line %d ----------------\n", __LINE__);
+    printf("is resizable %d\n", isResizable());
     internal->parameterChanged(index, value);
 }
 
 
-void LuaUIExporter::programLoaded(const uint32_t index)
+#if DISTRHO_PLUGIN_WANT_PROGRAMS
+void LuaUI::programLoaded(uint32_t index) 
 {
-    (void)index;
-    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
+    printf("----------------- LuaUI line %d ----------------\n", __LINE__);
+}
+#endif
+
+#if DISTRHO_PLUGIN_WANT_STATE
+void LuaUI::stateChanged(const char* key, const char* value)
+{
+    printf("----------------- LuaUI line %d ----------------\n", __LINE__);
+}
+#endif
+
+void LuaUI::sampleRateChanged(double newSampleRate)
+{
+    printf("----------------- LuaUI line %d ----------------\n", __LINE__);
 }
 
-
-void LuaUIExporter::exec(IdleCallback* const cb)
+void LuaUI::uiIdle()
 {
-    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
-    internal->exec(cb);
+//    printf("----------------- LuaUI line %d ----------------\n", __LINE__);
+    internal->idle();
 }
 
-
-void LuaUIExporter::exec_idle()
+void LuaUI::uiScaleFactorChanged(double scaleFactor)
 {
-//    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
+    printf("----------------- LuaUI line %d ----------------\n", __LINE__);
 }
 
-bool LuaUIExporter::plugin_idle()
-{
-//    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
-    return internal->idle();
-}
-
-
-void LuaUIExporter::quit()
-{
-    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
-    internal->close();
-}
-
-
-bool LuaUIExporter::handlePluginKeyboard(const bool press, const uint key, const uint16_t mods)
-{
-    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
-    return false;
-}
-
-bool LuaUIExporter::handlePluginSpecial(const bool press, const DGL_NAMESPACE::Key key, const uint16_t mods)
-{
-    printf("----------------- LuaUIExporter line %d ----------------\n", __LINE__);
-    return false;
-}
-
+// -----------------------------------------------------------------------
+END_NAMESPACE_LDPF
+// -----------------------------------------------------------------------
 
 
 // -----------------------------------------------------------------------
-END_NAMESPACE_LDGL
+START_NAMESPACE_DISTRHO
+UI* createUI()
+{
+    return LDPF_NAMESPACE::createLuaUI();
+}
+END_NAMESPACE_DISTRHO
 // -----------------------------------------------------------------------

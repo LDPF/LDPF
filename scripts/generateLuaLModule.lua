@@ -31,7 +31,7 @@ elseif #moduleName == 0 then -- resourcecs only in main module
 end
 
 if bytes then
-    writef('#include "../../ldpf/ldgl/ldgl_base.h"\n\n')
+    writef('#include "../../ldpf/src/ldpf_base.h"\n\n')
     writef('static const unsigned char LDPF_%s_bytes[] = {\n    ', cname)
     for j = 1, #bytes do
         if j > 1 and (j - 1) % 20 == 0 then
@@ -44,7 +44,7 @@ if bytes then
         end
     end
     writef('\n};\n\n')
-    writef('const LDGL_Data LDPF_%s_data = {\n', cname)
+    writef('const LDPF_Data LDPF_%s_data = {\n', cname)
     writef('    %d, LDPF_%s_bytes\n', #bytes, cname)
     writef('};\n')
 end

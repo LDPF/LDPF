@@ -38,7 +38,7 @@ LDPF_ALL_PHONY_TARGETS :=  all ldpf plugins components gen help \
                            $(LDPF_COMPONENT_DOWNLOAD_TARGETS) \
                            $(LDPF_COMPONENT_DOWNLOAD_ALL_TARGETS) \
                            $(LDPF_PLUGIN_DOWNLOAD_TARGETS) \
-                           clean clean-components clean-plugins clean-ldpf clean-ldgl clean-lua \
+                           clean clean-components clean-plugins clean-ldpf clean-ldpf clean-lua \
                            $(LDPF_COMPONENT_CLEAN_TARGETS)     $(LDPF_PLUGIN_CLEAN_TARGETS)
 
 .PHONY: $(LDPF_ALL_PHONY_TARGETS)
@@ -164,8 +164,8 @@ $(LDPF_COMPONENT_CLEAN_TARGETS): clean-%:
 
 # --------------------------------------------------------------
 
-clean-ldgl:
-	$(MAKE) clean-ldgl -C $(LDPF_PATH)
+clean-ldpf:
+	$(MAKE) clean-ldpf -C $(LDPF_PATH)
 
 clean-lua:
 	$(MAKE) clean-lua -C $(LDPF_PATH) 

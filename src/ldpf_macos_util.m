@@ -1,8 +1,8 @@
 #import <Cocoa/Cocoa.h>
 
-#include "macos_util.h"
+#include "ldpf_macos_util.h"
 
-double LDGL_getScreenScaleFactor()
+double LDPF_getScreenScaleFactor()
 {
     return [[NSScreen mainScreen] backingScaleFactor];
 }

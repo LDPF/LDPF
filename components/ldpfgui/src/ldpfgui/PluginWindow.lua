@@ -33,26 +33,27 @@ function PluginWindow:new(gui, winParams)
         return self:getNativeHandle()
     end
     
-    function ldpf.getWidth()
-        local w,_ = self:getSize()
-        return w
-    end
-    
-    function ldpf.getHeight()
-        local _,h = self:getSize()
-        return h
-    end
-
-    function ldpf.close()
-        self:close()
-    end
-    
     ----------------------------------------------------------------------------------------------------------
     -- Show Window
 
+    ldpf.setSize(self:getSize())
     self:requestFocus()
 
     --print(string.format("Native window handle %p\n", self:getNativeHandle()))
+end
+
+function PluginWindow:show()
+    ldpf.setSize(self:getSize())
+    Super.show(self)
+end
+
+function PluginWindow:setSize(w, h)
+    if not h then
+        h = w[2]
+        w = w[1]
+    end
+    Super.setSize(self, w, h)
+    ldpf.setSize(w, h)
 end
 
 function PluginWindow:interceptMouseDown(...)

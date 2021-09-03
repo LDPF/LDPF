@@ -21,9 +21,9 @@ BUILD_CXX_FLAGS += $(LUA_CFLAGS)
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-BUILD_C_FLAGS   += $(LDGL_FLAGS) -I.
-BUILD_CXX_FLAGS += $(LDGL_FLAGS) -I. -Wno-unused-parameter
-LINK_FLAGS      += $(LDGL_LIBS)
+BUILD_C_FLAGS   += $(LDPF_FLAGS) -I.
+BUILD_CXX_FLAGS += $(LDPF_FLAGS) -I. -Wno-unused-parameter
+LINK_FLAGS      += $(LDPF_LIBS)
 
 ifeq ($(HAVE_CAIRO),true)
   BUILD_C_FLAGS   += $(CAIRO_FLAGS)
@@ -42,18 +42,17 @@ endif
 
 ROOT_BUILD_DIR := $(LDPF_ROOT_BUILD_DIR)
 ROOT_INC_DIR   := $(LDPF_ROOT_INC_DIR)
-LDGL_BUILD_DIR := $(ROOT_BUILD_DIR)/ldgl
+LDPF_BUILD_DIR := $(ROOT_BUILD_DIR)/ldpf
 LUA_BUILD_DIR  := $(ROOT_BUILD_DIR)/lua
 LUA_DIR        := lua
 LUA_VERSION    := 5.4.3
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-OBJS_ldgl = \
-	$(LDGL_BUILD_DIR)/LuaUIExporter.cpp.o
+OBJS_ldpf = 
 
 ifeq ($(MACOS),true)
-OBJS_ldgl += $(LDGL_BUILD_DIR)/macos_util.m.o
+OBJS_ldpf += $(LDPF_BUILD_DIR)/ldpf_macos_util.m.o
 BUILD_CXX_FLAGS += -D LDPF_MACOS
 endif
 	
@@ -72,13 +71,13 @@ INCS_lua := $(foreach h,$(lua_headers),$(ROOT_INC_DIR)/$(h))
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-POSSIBLE_PHONY_TARGETS := all clean clean-lua clean-ldgl download-lua help
+POSSIBLE_PHONY_TARGETS := all clean clean-lua clean-ldpf download-lua help
 
 .PHONY: $(POSSIBLE_PHONY_TARGETS)
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-all: $(ROOT_BUILD_DIR)/libldgl.a \
+all: $(ROOT_BUILD_DIR)/libldpf.a \
      $(ROOT_BUILD_DIR)/liblua.a \
      $(LUA_BUILD_DIR)/lua
 
@@ -107,7 +106,7 @@ download-lua:
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-$(ROOT_BUILD_DIR)/libldgl.a: $(OBJS_ldgl)
+$(ROOT_BUILD_DIR)/libldpf.a: $(OBJS_ldpf)
 $(ROOT_BUILD_DIR)/liblua.a:  $(OBJS_lua)
 
 $(ROOT_BUILD_DIR)/lib%.a: 
@@ -122,12 +121,12 @@ $(ROOT_INC_DIR)/%: luainc/%
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-$(LDGL_BUILD_DIR)/%.cpp.o: ldgl/%.cpp  $(INCS_lua)
+$(LDPF_BUILD_DIR)/%.cpp.o: src/%.cpp  $(INCS_lua)
 	-@mkdir -p $(@D)
 	@echo "Compiling $<"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-$(LDGL_BUILD_DIR)/%.m.o: ldgl/%.m
+$(LDPF_BUILD_DIR)/%.m.o: src/%.m
 	-@mkdir -p $(@D)
 	@echo "Compiling $<"
 	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -c -o $@
@@ -149,15 +148,15 @@ clean-lua:
 	rm -rf $(LUA_BUILD_DIR) \
 	       $(INCS_lua) \
 	       $(ROOT_BUILD_DIR)/liblua.a
-clean-ldgl:
-	rm -rf $(LDGL_BUILD_DIR) \
-	       $(ROOT_BUILD_DIR)/libldgl.a
+clean-ldpf:
+	rm -rf $(LDPF_BUILD_DIR) \
+	       $(ROOT_BUILD_DIR)/libldpf.a
 
-clean: clean-lua clean-ldgl
+clean: clean-lua clean-ldpf
 	
 # ---------------------------------------------------------------------------------------------------------------------
 
--include $(OBJS_ldgl:%.o=%.d)
+-include $(OBJS_ldpf:%.o=%.d)
 -include $(OBJS_lua:%.o=%.d)
 
 # ---------------------------------------------------------------------------------------------------------------------

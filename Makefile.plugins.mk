@@ -40,13 +40,13 @@ include $(LDPF_PATH)/Makefile.base.mk
 
 # ---------------------------------------------------------------------------------------------------------------------------------
 
-UI_TYPE             := otherui
-OTHERUI_FLAGS       := $(LDPF_UI_FLAGS) \
-                       -D'DISTRHO_UI_USE_OTHERUI=1' \
-                       -D'DISTRHO_UI_OTHERUI_EXPORTER_FULL_CLASS_NAME=LDGL::LuaUIExporter' \
-                       -D'DISTRHO_UI_OTHERUI_EXPORTER_INCLUDE="$(LDPF_PATH)/ldgl/LuaUIExporter.hpp"'
-OTHERUI_LIBS        := $(LDPF_ROOT_BUILD_DIR)/libldgl.a 
-OTHERUI_SYSTEM_LIBS := 
+UI_TYPE             := external
+DGL_FLAGS           := $(LDPF_UI_FLAGS) \
+                       -D'DISTRHO_PLUGIN_HAS_UI=1' \
+                       -D'DISTRHO_PLUGIN_HAS_EMBED_UI=1' \
+                       -D'DISTRHO_PLUGIN_HAS_EXTERNAL_UI=1'
+DGL_LIB             := $(LDPF_ROOT_BUILD_DIR)/libldpf.a 
+DGL_LIBS            := 
 
 # ---------------------------------------------------------------------------------------------------------------------------------
 
@@ -73,19 +73,19 @@ LDPF_CORE_VIDEO_LIBS  := -framework CoreVideo
 
 # ---------------------------------------------------------------------------------------------------------------------------------
 
-OTHERUI_FLAGS       += $(foreach f,$(LDPF_PLUGIN_SYSTEM_FEATURES),$(LDPF_$(f)_FLAGS))
-OTHERUI_SYSTEM_LIBS += $(foreach f,$(LDPF_PLUGIN_SYSTEM_FEATURES),$(LDPF_$(f)_LIBS))
+DGL_FLAGS   += $(foreach f,$(LDPF_PLUGIN_SYSTEM_FEATURES),$(LDPF_$(f)_FLAGS))
+DGL_LIBS    += $(foreach f,$(LDPF_PLUGIN_SYSTEM_FEATURES),$(LDPF_$(f)_LIBS))
 
 ifeq ($(LINUX),true)
-  OTHERUI_SYSTEM_LIBS += -lpthread -lX11
+  DGL_LIBS += -lpthread -lX11
 endif
 
 ifeq ($(WINDOWS),true)
-  OTHERUI_SYSTEM_LIBS += -lkernel32 -lgdi32 -luser32
+  DGL_LIBS += -lkernel32 -lgdi32 -luser32
 endif
 
 ifeq ($(MACOS),true)
-  OTHERUI_SYSTEM_LIBS += -lpthread -framework Cocoa
+  DGL_LIBS += -lpthread -framework Cocoa
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------------------
@@ -98,13 +98,14 @@ LDPF_GENERATED_FILES_STEMS := $(foreach s,$(LDPF_PLUGIN_LUA_SOURCES),generated_$
 
 # ---------------------------------------------------------------------------------------------------------------------------------
 
-OTHERUI_FLAGS += -D'LDPF_GENERATED_LUA_INIT_PARAMS_HPP="$(BUILD_DIR)/GeneratedLuaInitParams.hpp"'  \
-                 $(LUA_CFLAGS)
+DGL_FLAGS += -D'LDPF_GENERATED_LUA_INIT_PARAMS_HPP="$(BUILD_DIR)/LDPF_GeneratedLuaUIInitParams.hpp"'  \
+             $(LUA_CFLAGS)
                  
-OTHERUI_LIBS += $(foreach lib,$(LDPF_PLUGIN_STATIC_LIBS), $(LDPF_ROOT_BUILD_DIR)/lib$(lib).a) \
-                $(LDPF_ROOT_BUILD_DIR)/liblua.a
+DGL_LIB   += $(foreach lib,$(LDPF_PLUGIN_STATIC_LIBS), $(LDPF_ROOT_BUILD_DIR)/lib$(lib).a) \
+             $(LDPF_ROOT_BUILD_DIR)/liblua.a
 
-FILES_UI += generated-main.c \
+FILES_UI += LuaUI.cpp \
+            generated-main.c \
             $(patsubst %, %.c, $(LDPF_GENERATED_FILES_STEMS))
 
 # ---------------------------------------------------------------------------------------------------------------------------------
@@ -117,25 +118,25 @@ include $(DPF_PATH)/Makefile.plugins.mk
 
 # ---------------------------------------------------------------------------------------------------------------------------------
 
-all: $(BUILD_DIR)/GeneratedLuaInitParams.hpp 
+all: $(BUILD_DIR)/LDPF_GeneratedLuaUIInitParams.hpp 
 
-$(BUILD_DIR)/GeneratedLuaInitParams.hpp: $(LDPF_PLUGIN_DIR)/info.mk
+$(BUILD_DIR)/LDPF_GeneratedLuaUIInitParams.hpp: $(LDPF_PLUGIN_DIR)/info.mk
 	-@mkdir -p $(@D)
 	@echo "Generating $(@F)"
 	$(SILENT)echo 'extern "C" {' > $@; \
 	         $(foreach m,$(LDPF_PLUGIN_LUA_CMODULES), echo '    int luaopen_$(subst .,_,$(m))(lua_State* L);' >> $@; ) \
 	         echo '} // extern "C"' >> $@; \
 	         echo '' >> $@; \
-	         echo 'static const LDGL::LuaCModule LDPF_generatedLuaCModules[] = {' >> $@; \
+	         echo 'static const LDPF::LuaCModule LDPF_generatedLuaCModules[] = {' >> $@; \
 	         $(foreach m,$(LDPF_PLUGIN_LUA_CMODULES), echo '    { "$(LDPF_COMPONENT_$(m)_LMOD_NAME)", luaopen_$(subst .,_,$(m)) },' >> $@; ) \
 	         echo '    { NULL, NULL }' >> $@; \
 	         echo '};' >> $@; \
 	         echo '' >> $@; \
-	         echo 'extern const LDGL::LuaLSubModule LDPF_generatedMainModuleResources[];' >> $@; \
-	         echo 'extern const LDGL::LuaLSubModule LDPF_generatedMainModulePackages[];' >> $@; \
-	         $(foreach m,$(LDPF_PLUGIN_LUA_LMODULES), echo 'extern const LDGL::LuaLSubModule LDPF_generatedModulePackages_$(m)[];' >> $@; ) \
+	         echo 'extern const LDPF::LuaLSubModule LDPF_generatedMainModuleResources[];' >> $@; \
+	         echo 'extern const LDPF::LuaLSubModule LDPF_generatedMainModulePackages[];' >> $@; \
+	         $(foreach m,$(LDPF_PLUGIN_LUA_LMODULES), echo 'extern const LDPF::LuaLSubModule LDPF_generatedModulePackages_$(m)[];' >> $@; ) \
 	         echo '' >> $@; \
-	         echo 'static const LDGL::LuaLModule LDPF_generatedLuaLModules[] = {' >> $@; \
+	         echo 'static const LDPF::LuaLModule LDPF_generatedLuaLModules[] = {' >> $@; \
 	         echo '    { "", LDPF_generatedMainModulePackages },' >> $@; \
 	         $(foreach m,$(LDPF_PLUGIN_LUA_LMODULES), echo '    { "$(m)", LDPF_generatedModulePackages_$(m) },' >> $@; ) \
 	         echo '    { NULL, NULL }' >> $@; \
@@ -144,6 +145,10 @@ $(BUILD_DIR)/GeneratedLuaInitParams.hpp: $(LDPF_PLUGIN_DIR)/info.mk
 $(BUILD_DIR)/%.c.o: $(BUILD_DIR)/%.c
 	@echo "Compiling $<"
 	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -c -o $@
+
+$(BUILD_DIR)/%.cpp.o: $(LDPF_PATH)/src/%.cpp
+	@echo "Compiling $<"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 define GENERATE_RULE
 $(BUILD_DIR)/$1.c: $(LDPF_LUA_SOURCE_PATH)/$2 \

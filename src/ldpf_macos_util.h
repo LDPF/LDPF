@@ -3,7 +3,7 @@
 extern "C" {
 #endif
 
-double LDGL_getScreenScaleFactor();
+double LDPF_getScreenScaleFactor();
 
 #ifdef __cplusplus
 }
