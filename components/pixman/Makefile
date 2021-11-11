@@ -37,6 +37,11 @@ ifeq ($(MACOS),true)
   BUILD_C_FLAGS += -D'HAVE_PTHREADS'
 endif
 
+ifeq ($(WINDOWS),true)
+  # define this to use xmmintrin.h. _WIN64 is only used in pixman-mmx.c:63 
+  BUILD_C_FLAGS += -D'USE_XMMINTRIN_H'
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 VERSION := 0.40.0
@@ -79,15 +84,23 @@ $(COMPONENT_BUILD_DIR)/include/%.h: $(THIRDPARTY_PATH)/pixman/pixman/%.h
 
 $(COMPONENT_LIB): $(OBJS_pixman)
 
+$(COMPONENT_BUILD_DIR)/%.c.o: %.c $(HEADER_OVERRIDES) $(COMPONENT_HEADERS) 
+	$(COMPILE_RUN)
+
 $(COMPONENT_BUILD_DIR)/%.c.o: $(THIRDPARTY_PATH)/pixman/pixman/%.c $(HEADER_OVERRIDES) $(COMPONENT_HEADERS) 
+	$(COMPILE_RUN)
+
+define COMPILE_RUN
 	-@mkdir -p $(@D)
 	@echo "Compiling $<"
-	$(SILENT)$(CC) -w $< -I $(COMPONENT_BUILD_DIR)/include/ $(BUILD_C_FLAGS) \
+	$(SILENT)$(CC) -w $< $(BUILD_C_FLAGS) \
+	-I $(COMPONENT_BUILD_DIR)/include/ \
+	-I $(THIRDPARTY_PATH)/pixman/pixman \
 	-msse2 -mssse3 -DHAVE_CONFIG_H -DPIXMAN_EXPORT='' \
 	-include $(COMPONENT_BUILD_DIR)/include/config.h \
 	-include $(COMPONENT_BUILD_DIR)/include/pixman-private.h  \
 	-c -o $@
-
+endef
 
 # ---------------------------------------------------------------------------------------------------------------------
 

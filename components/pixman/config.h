@@ -16,5 +16,3 @@
 /* use SSSE3 compiler intrinsics */
 #define USE_SSSE3 1
 
-/* define this to use xmmintrin.h. _WIN64 is only used in pixman-mmx.c:63 */
-#define USE_XMMINTRIN_H
