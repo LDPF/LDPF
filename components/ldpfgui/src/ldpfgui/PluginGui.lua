@@ -42,19 +42,12 @@ function PluginGui:new(name, pluginParams)
     ----------------------------------------------------------------------------------------------------------
     -- Implement callbacks for LDPF
     
-    -- update callback if plugin ui is embedded in host
     function ldpf.idle()
         if lwtk.platform ~= "MAC" then
             app:update(0)
         end
-        return app:hasWindows()
-    end
-    
-    -- update loop if plugin is running standalone
-    function ldpf.exec(idleCallback)
-        while app:hasWindows() do
-            app:update(0.030)
-            idleCallback()
+        if not ldpf.parentWindowId and not app:hasWindows() then
+            ldpf.close()
         end
     end
     
